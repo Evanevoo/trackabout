@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AppBar, Box, CssBaseline, Divider, Drawer, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Button } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
@@ -13,6 +13,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
 import UploadIcon from '@mui/icons-material/Upload';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../supabase/client';
 
 const drawerWidth = 240;
 
@@ -33,11 +34,26 @@ const navItems = [
 export default function MainLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [logo, setLogo] = useState(() => localStorage.getItem('companyLogo') || null);
+  const [logo, setLogo] = useState(null);
   const [logoUploadOpen, setLogoUploadOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useAuth();
+
+  // Fetch logo from settings table on mount
+  useEffect(() => {
+    async function fetchLogo() {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('logo_url')
+        .eq('id', 1)
+        .single();
+      if (data && data.logo_url) {
+        setLogo(data.logo_url);
+      }
+    }
+    fetchLogo();
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -48,15 +64,33 @@ export default function MainLayout() {
     console.log('Global search:', search);
   };
 
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = evt => {
-      setLogo(evt.target.result);
-      localStorage.setItem('companyLogo', evt.target.result);
-    };
-    reader.readAsDataURL(file);
+    // Upload to Supabase Storage (upsert: true allows replacing the logo)
+    const { error: uploadError } = await supabase.storage
+      .from('logos')
+      .upload('company-logo.png', file, { upsert: true });
+    if (uploadError) {
+      alert('Upload failed: ' + uploadError.message);
+      return;
+    }
+    // Get public URL
+    const { data: publicUrlData } = supabase
+      .storage
+      .from('logos')
+      .getPublicUrl('company-logo.png');
+    const logoUrl = publicUrlData.publicUrl;
+    // Save URL to settings table (assuming id=1 for the single settings row)
+    const { error: updateError } = await supabase
+      .from('settings')
+      .update({ logo_url: logoUrl })
+      .eq('id', 1);
+    if (updateError) {
+      alert('Failed to save logo URL: ' + updateError.message);
+      return;
+    }
+    setLogo(logoUrl);
   };
 
   const drawer = (
@@ -136,7 +170,9 @@ export default function MainLayout() {
             <Button color="inherit" onClick={() => navigate('/invoices')}>Invoices</Button>
             <Button color="inherit" onClick={() => navigate('/customers')}>Customers</Button>
             <Button color="inherit" onClick={() => navigate('/scanned-orders')}>Scanned Orders</Button>
-            <Button variant="contained" sx={{ bgcolor: '#222', color: '#fff', borderRadius: 999, px: 4, py: 1, fontWeight: 700, fontSize: 16, textTransform: 'none', boxShadow: 'none', '&:hover': { bgcolor: '#111' } }} onClick={() => navigate('/cylinders')}>Get started</Button>
+            <IconButton color="inherit" onClick={() => navigate('/settings')}>
+              <SettingsIcon />
+            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>
