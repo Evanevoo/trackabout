@@ -100,73 +100,64 @@ export default function SupabaseOrders() {
   });
 
   return (
-    <Box maxWidth="xl" mx="auto" mt={6}>
-      <Paper elevation={4} sx={{ p: 4, borderRadius: 4 }}>
-        <Typography variant="h4" fontWeight={800} color="primary" mb={3}>Orders Report</Typography>
-        <Box display="flex" flexWrap="wrap" gap={3} mb={4} alignItems="end">
-          <TextField
-            label="Search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Customer, Invoice #, Gas Type, Cylinder Type"
-            size="small"
-            sx={{ width: 220 }}
-          />
-          <TextField
-            label="Date From"
-            type="date"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-            size="small"
-            sx={{ width: 160 }}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Date To"
-            type="date"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-            size="small"
-            sx={{ width: 160 }}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Box>
-        {loading && <Box p={4} textAlign="center"><CircularProgress /></Box>}
-        {error && <Alert severity="error">Error: {error}</Alert>}
-        {!loading && !error && (
-          <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  {COLUMNS.map(col => (
-                    <TableCell key={col.key} sx={{ fontWeight: 700, bgcolor: 'primary.light', color: 'primary.contrastText' }}>{col.label}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={COLUMNS.length} align="center" sx={{ py: 4, color: 'text.secondary' }}>No records found.</TableCell>
-                  </TableRow>
-                ) : (
-                  filtered.map((row, idx) => (
-                    <TableRow key={idx} sx={{ backgroundColor: idx % 2 === 0 ? 'action.hover' : undefined }}>
-                      {COLUMNS.map(col => (
-                        <TableCell
-                          key={col.key}
-                          sx={col.key === 'scan_status' && row[col.key] === 'Not Scanned' ? { bgcolor: 'error.light', color: 'error.main', fontWeight: 700 } : {}}
-                        >
-                          {row[col.key] || ''}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-    </Box>
+    <div className="max-w-6xl mx-auto mt-10 bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-end md:gap-6 gap-3 mb-6">
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Orders Report</h2>
+            <div className="flex flex-wrap gap-3 items-end">
+              <input
+                type="text"
+                placeholder="Search customer, invoice #, gas type, cylinder type"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="border border-gray-300 p-2 rounded text-sm w-56"
+              />
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-600">Date From</label>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border border-gray-300 p-2 rounded text-sm" />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-600">Date To</label>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border border-gray-300 p-2 rounded text-sm" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-200 text-xs">
+            <thead>
+              <tr>
+                {COLUMNS.map(col => (
+                  <th key={col.key} className="border-b border-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 text-left whitespace-nowrap">{col.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={COLUMNS.length} className="py-8 text-center text-gray-500">Loading...</td></tr>
+              ) : error ? (
+                <tr><td colSpan={COLUMNS.length} className="py-8 text-center text-red-700">Error: {error}</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={COLUMNS.length} className="py-8 text-center text-gray-500">No records found.</td></tr>
+              ) : (
+                filtered.map((row, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {COLUMNS.map(col => (
+                      <td
+                        key={col.key}
+                        className={`px-2 py-1 text-xs text-gray-900 whitespace-nowrap ${col.key === 'scan_status' && row[col.key] === 'Not Scanned' ? 'bg-red-50 text-red-700 font-bold' : ''}`}
+                      >
+                        {row[col.key] || ''}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 } 

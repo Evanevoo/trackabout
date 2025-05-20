@@ -3,6 +3,9 @@ import { supabase } from '../supabase/client';
 import { useNavigate } from 'react-router-dom';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import {
+  Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert
+} from '@mui/material';
 
 function Cylinders({ profile }) {
   const [cylinders, setCylinders] = useState([]);
@@ -125,11 +128,18 @@ function Cylinders({ profile }) {
   const handleAssign = async (e) => {
     e.preventDefault();
     setError(null);
+    let location_id = null;
+    if (assignForm.customer_id) {
+      // Find the assigned customer's location_id
+      const customer = customers.find(c => c.CustomerListID === assignForm.customer_id);
+      location_id = customer?.location_id || null;
+    }
     const { error } = await supabase
       .from('cylinders')
       .update({
         assigned_customer: assignForm.customer_id || null,
-        rental_start_date: assignForm.customer_id ? assignForm.rental_start_date : null
+        rental_start_date: assignForm.customer_id ? assignForm.rental_start_date : null,
+        location_id: location_id
       })
       .eq('id', selectedCylinder.id);
 
@@ -213,211 +223,205 @@ function Cylinders({ profile }) {
     }
   };
 
-  if (loading) return <div>Loading cylinders...</div>;
-  if (error) return <div className="text-red-600">Error: {error}</div>;
+  if (loading) return <Box p={4} textAlign="center"><Typography>Loading cylinders...</Typography></Box>;
+  if (error) return <Box p={4} color="error.main">Error: {error}</Box>;
 
   return (
-    <div className="relative max-w-7xl mx-auto mt-10 bg-gradient-to-br from-white via-blue-50 to-blue-100 shadow-2xl rounded-2xl p-8 border border-blue-100 w-full">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-xl font-bold">Cylinders</h2>
-        <button
-          onClick={() => navigate('/')}
-          className="bg-gradient-to-r from-gray-400 to-gray-300 text-white px-6 py-2 rounded-lg shadow-md hover:from-gray-500 hover:to-gray-400 font-semibold transition"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-      {/* Bulk Delete Buttons */}
-      <div className="mb-4 flex gap-2">
-        {selected.length > 0 && (
-          <button
-            onClick={handleBulkDelete}
-            className="bg-red-600 text-white px-4 py-2 rounded"
-          >
-            Delete Selected ({selected.length})
-          </button>
+    <Box sx={{ width: '100vw', minHeight: '100vh', bgcolor: '#fff', py: 6, px: { xs: 1, sm: 3, md: 6 } }}>
+      <Paper elevation={0} sx={{ width: '100%', borderRadius: 4, p: { xs: 2, md: 5 }, boxShadow: '0 2px 12px 0 rgba(16,24,40,0.04)', border: '1px solid #eee', bgcolor: '#fff' }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={5}>
+          <Typography variant="h3" fontWeight={900} color="primary" sx={{ letterSpacing: -1 }}>
+            Assets
+          </Typography>
+          <Button variant="outlined" color="primary" onClick={() => navigate('/')} sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>Dashboard</Button>
+        </Box>
+        {/* Bulk Delete Buttons */}
+        <Box mb={3} display="flex" gap={2}>
+          {selected.length > 0 && (
+            <Button onClick={handleBulkDelete} variant="contained" color="error" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>
+              Delete Selected ({selected.length})
+            </Button>
+          )}
+          {cylinders.length > 0 && (
+            <Button
+              onClick={async () => {
+                if (!window.confirm('Delete ALL assets? This cannot be undone.')) return;
+                setError(null);
+                const { error } = await supabase.from('cylinders').delete();
+                if (error) setError(error.message);
+                else {
+                  setCylinders([]);
+                  setSelected([]);
+                }
+              }}
+              variant="contained"
+              color="error"
+              sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}
+            >
+              Delete All
+            </Button>
+          )}
+        </Box>
+        {/* Import Assets Section */}
+        <Box mb={6} p={4} sx={{ bgcolor: '#fafbfc', borderRadius: 3, border: '1px solid #e3e7ef', boxShadow: 'none' }}>
+          <Typography variant="h6" fontWeight={800} color="primary" mb={2}>Import Assets</Typography>
+          <TextField type="file" inputProps={{ accept: '.csv,.xlsx,.xls,.txt' }} onChange={handleImportFile} size="medium" sx={{ mb: 2, borderRadius: 2, bgcolor: '#fff' }} />
+          {importError && <Alert severity="error" sx={{ mb: 2 }}>{importError}</Alert>}
+          {importPreview.length > 0 && (
+            <Box mb={2}>
+              <Typography fontWeight={700} mb={1}>Preview ({importPreview.length} rows):</Typography>
+              <TableContainer component={Paper} sx={{ borderRadius: 2, border: '1px solid #e3e7ef', boxShadow: 'none', mb: 2 }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Group</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Product Code</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell>In-House Total</TableCell>
+                      <TableCell>With Customer Total</TableCell>
+                      <TableCell>Lost Total</TableCell>
+                      <TableCell>Total</TableCell>
+                      <TableCell>Dock Stock</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {importPreview.slice(0, 5).map((row, i) => (
+                      <TableRow key={i}>
+                        <TableCell>{row['Category']}</TableCell>
+                        <TableCell>{row['Group']}</TableCell>
+                        <TableCell>{row['Type']}</TableCell>
+                        <TableCell>{row['Product Code']}</TableCell>
+                        <TableCell>{row['Description']}</TableCell>
+                        <TableCell>{row['In-House Total']}</TableCell>
+                        <TableCell>{row['With Customer Total']}</TableCell>
+                        <TableCell>{row['Lost Total']}</TableCell>
+                        <TableCell>{row['Total']}</TableCell>
+                        <TableCell>{row['Dock Stock']}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <Button onClick={handleImportSubmit} variant="contained" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>Import All</Button>
+            </Box>
+          )}
+          {importResult && <Alert severity="success" sx={{ mt: 2 }}>{importResult}</Alert>}
+        </Box>
+        {canEdit && (
+          <Box component="form" onSubmit={editingId ? handleUpdate : handleAdd} mb={4} display="flex" gap={2} flexWrap="wrap" alignItems="center">
+            <TextField name="serial_number" value={form.serial_number} onChange={handleChange} label="Serial Number" size="medium" required sx={{ minWidth: 160 }} />
+            <TextField name="barcode_number" value={form.barcode_number} onChange={handleChange} label="Barcode" size="medium" sx={{ minWidth: 160 }} />
+            <TextField name="gas_type" value={form.gas_type} onChange={handleChange} label="Gas Type" size="medium" required sx={{ minWidth: 160 }} />
+            <Button type="submit" variant="contained" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>{editingId ? 'Update' : 'Add'}</Button>
+            {editingId && <Button type="button" onClick={() => { setEditingId(null); setForm({ serial_number: '', barcode_number: '', gas_type: '' }); }} variant="outlined" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>Cancel</Button>}
+          </Box>
         )}
-        {cylinders.length > 0 && (
-          <button
-            onClick={async () => {
-              if (!window.confirm('Delete ALL assets? This cannot be undone.')) return;
-              setError(null);
-              const { error } = await supabase.from('cylinders').delete();
-              if (error) setError(error.message);
-              else {
-                setCylinders([]);
-                setSelected([]);
-              }
-            }}
-            className="bg-red-800 text-white px-4 py-2 rounded"
-          >
-            Delete All
-          </button>
-        )}
-      </div>
-      {/* Import Assets Section */}
-      <div className="mb-8 p-4 bg-white/80 rounded-xl shadow border border-blue-100">
-        <h3 className="font-bold mb-2 text-blue-800">Import Assets</h3>
-        <input type="file" accept=".csv,.xlsx,.xls,.txt" onChange={handleImportFile} className="mb-2" />
-        {importError && <div className="text-red-600 mb-2">{importError}</div>}
-        {importPreview.length > 0 && (
-          <div className="mb-2">
-            <div className="font-semibold mb-1">Preview ({importPreview.length} rows):</div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border text-xs">
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Group</th>
-                    <th>Type</th>
-                    <th>Product Code</th>
-                    <th>Description</th>
-                    <th>In-House Total</th>
-                    <th>With Customer Total</th>
-                    <th>Lost Total</th>
-                    <th>Total</th>
-                    <th>Dock Stock</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {importPreview.slice(0, 5).map((row, i) => (
-                    <tr key={i}>
-                      <td>{row['Category']}</td>
-                      <td>{row['Group']}</td>
-                      <td>{row['Type']}</td>
-                      <td>{row['Product Code']}</td>
-                      <td>{row['Description']}</td>
-                      <td>{row['In-House Total']}</td>
-                      <td>{row['With Customer Total']}</td>
-                      <td>{row['Lost Total']}</td>
-                      <td>{row['Total']}</td>
-                      <td>{row['Dock Stock']}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {importPreview.length > 5 && <div className="text-xs text-gray-500 mt-1">Showing first 5 rows only.</div>}
-            </div>
-            <button onClick={handleImportSubmit} className="mt-2 bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Import All</button>
-          </div>
-        )}
-        {importResult && <div className="text-green-700 font-semibold">{importResult}</div>}
-      </div>
-      {canEdit && (
-        <form onSubmit={editingId ? handleUpdate : handleAdd} className="mb-4 flex gap-2">
-          <input name="serial_number" value={form.serial_number} onChange={handleChange} placeholder="Serial Number" className="border p-2 rounded" required />
-          <input name="barcode_number" value={form.barcode_number} onChange={handleChange} placeholder="Barcode" className="border p-2 rounded" />
-          <input name="gas_type" value={form.gas_type} onChange={handleChange} placeholder="Gas Type" className="border p-2 rounded" required />
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editingId ? 'Update' : 'Add'}</button>
-          {editingId && <button type="button" onClick={() => { setEditingId(null); setForm({ serial_number: '', barcode_number: '', gas_type: '' }); }} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>}
-        </form>
-      )}
-      <table className="min-w-full bg-white border">
-        <thead>
-          <tr>
-            <th>
-              <input
-                type="checkbox"
-                checked={selected.length === cylinders.length && cylinders.length > 0}
-                onChange={() => {
-                  if (selected.length === cylinders.length) setSelected([]);
-                  else setSelected(cylinders.map(c => c.id));
-                }}
-              />
-            </th>
-            <th className="border px-4 py-2">Category</th>
-            <th className="border px-4 py-2">Group</th>
-            <th className="border px-4 py-2">Type</th>
-            <th className="border px-4 py-2">Product Code</th>
-            <th className="border px-4 py-2">Description</th>
-            <th className="border px-4 py-2">In-House Total</th>
-            <th className="border px-4 py-2">With Customer Total</th>
-            <th className="border px-4 py-2">Lost Total</th>
-            <th className="border px-4 py-2">Total</th>
-            <th className="border px-4 py-2">Dock Stock</th>
-            {canEdit && <th className="border px-4 py-2">Actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {cylinders.map(c => (
-            <tr key={c.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(c.id)}
-                  onChange={() => {
-                    setSelected(selected =>
-                      selected.includes(c.id)
-                        ? selected.filter(id => id !== c.id)
-                        : [...selected, c.id]
-                    );
-                  }}
-                />
-              </td>
-              <td className="border px-4 py-2">{c.category}</td>
-              <td className="border px-4 py-2">{c.group_name}</td>
-              <td className="border px-4 py-2">{c.type}</td>
-              <td className="border px-4 py-2">{c.product_code}</td>
-              <td className="border px-4 py-2">{c.description}</td>
-              <td className="border px-4 py-2">{c.in_house_total}</td>
-              <td className="border px-4 py-2">{c.with_customer_total}</td>
-              <td className="border px-4 py-2">{c.lost_total}</td>
-              <td className="border px-4 py-2">{c.total}</td>
-              <td className="border px-4 py-2">{c.dock_stock}</td>
-              {canEdit && (
-                <td className="border px-4 py-2">
-                  <button onClick={() => handleEdit(c)} className="bg-yellow-400 text-white px-2 py-1 rounded mr-2">Edit</button>
-                  <button onClick={() => openAssignModal(c)} className="bg-blue-500 text-white px-2 py-1 rounded mr-2">Assign</button>
-                  <button onClick={() => handleDelete(c.id)} className="bg-red-600 text-white px-2 py-1 rounded">Delete</button>
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Assignment Modal */}
-      {showAssignModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-bold mb-4">Assign Cylinder</h3>
-            <form onSubmit={handleAssign} className="space-y-4">
-              <div>
-                <label className="block mb-2">Customer</label>
-                <select
-                  value={assignForm.customer_id}
-                  onChange={(e) => setAssignForm({ ...assignForm, customer_id: e.target.value })}
-                  className="w-full border p-2 rounded"
-                >
-                  <option value="">-- Unassign --</option>
-                  {customers.map(customer => (
-                    <option key={customer.CustomerListID} value={customer.CustomerListID}>
-                      {customer.name} ({customer.customer_number})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {assignForm.customer_id && (
-                <div>
-                  <label className="block mb-2">Rental Start Date</label>
-                  <input
-                    type="date"
-                    value={assignForm.rental_start_date}
-                    onChange={(e) => setAssignForm({ ...assignForm, rental_start_date: e.target.value })}
-                    className="w-full border p-2 rounded"
-                    required
+        <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid #eee', boxShadow: 'none', mt: 2 }}>
+          <Table size="medium">
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={selected.length === cylinders.length && cylinders.length > 0}
+                    onChange={() => {
+                      if (selected.length === cylinders.length) setSelected([]);
+                      else setSelected(cylinders.map(c => c.id));
+                    }}
                   />
-                </div>
-              )}
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowAssignModal(false)} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
-                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+                </TableCell>
+                <TableCell>Category</TableCell>
+                <TableCell>Group</TableCell>
+                <TableCell>Type</TableCell>
+                <TableCell>Product Code</TableCell>
+                <TableCell>Description</TableCell>
+                <TableCell>In-House Total</TableCell>
+                <TableCell>With Customer Total</TableCell>
+                <TableCell>Lost Total</TableCell>
+                <TableCell>Total</TableCell>
+                <TableCell>Dock Stock</TableCell>
+                {canEdit && <TableCell>Actions</TableCell>}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {cylinders.map(c => (
+                <TableRow key={c.id} hover>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={selected.includes(c.id)}
+                      onChange={() => {
+                        setSelected(selected =>
+                          selected.includes(c.id)
+                            ? selected.filter(id => id !== c.id)
+                            : [...selected, c.id]
+                        );
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>{c.category}</TableCell>
+                  <TableCell>{c.group_name}</TableCell>
+                  <TableCell>{c.type}</TableCell>
+                  <TableCell>{c.product_code}</TableCell>
+                  <TableCell>{c.description}</TableCell>
+                  <TableCell>{c.in_house_total}</TableCell>
+                  <TableCell>{c.with_customer_total}</TableCell>
+                  <TableCell>{c.lost_total}</TableCell>
+                  <TableCell>{c.total}</TableCell>
+                  <TableCell>{c.dock_stock}</TableCell>
+                  {canEdit && (
+                    <TableCell>
+                      <Button size="small" variant="contained" color="warning" sx={{ borderRadius: 999, fontWeight: 700, px: 3, mr: 1 }} onClick={() => handleEdit(c)}>Edit</Button>
+                      <Button size="small" variant="contained" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 3, mr: 1 }} onClick={() => openAssignModal(c)}>Assign</Button>
+                      <Button size="small" variant="outlined" color="error" sx={{ borderRadius: 999, fontWeight: 700, px: 3 }} onClick={() => handleDelete(c.id)}>Delete</Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+      {/* Assignment Modal */}
+      <Dialog open={showAssignModal} onClose={() => setShowAssignModal(false)}>
+        <DialogTitle fontWeight={900}>Assign Cylinder</DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleAssign} sx={{ mt: 2, minWidth: 320 }}>
+            <TextField
+              select
+              label="Customer"
+              value={assignForm.customer_id}
+              onChange={e => setAssignForm({ ...assignForm, customer_id: e.target.value })}
+              fullWidth
+              sx={{ mb: 3 }}
+            >
+              <MenuItem value="">-- Unassign --</MenuItem>
+              {customers.map(customer => (
+                <MenuItem key={customer.CustomerListID} value={customer.CustomerListID}>
+                  {customer.name} ({customer.customer_number})
+                </MenuItem>
+              ))}
+            </TextField>
+            {assignForm.customer_id && (
+              <TextField
+                type="date"
+                label="Rental Start Date"
+                value={assignForm.rental_start_date}
+                onChange={e => setAssignForm({ ...assignForm, rental_start_date: e.target.value })}
+                fullWidth
+                required
+                sx={{ mb: 3 }}
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+            <DialogActions>
+              <Button onClick={() => setShowAssignModal(false)} variant="outlined" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>Cancel</Button>
+              <Button type="submit" variant="contained" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>Save</Button>
+            </DialogActions>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </Box>
   );
 }
 

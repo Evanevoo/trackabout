@@ -1,19 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import CssBaseline from '@mui/material/CssBaseline';
-import Divider from '@mui/material/Divider';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import MenuIcon from '@mui/icons-material/Menu';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
+import { AppBar, Box, CssBaseline, Divider, Drawer, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Button } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -22,29 +9,32 @@ import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReportIcon from '@mui/icons-material/Assessment';
-import Button from '@mui/material/Button';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
+import UploadIcon from '@mui/icons-material/Upload';
 import { useAuth } from '../hooks/useAuth';
 
 const drawerWidth = 240;
 
 const navItems = [
-  { to: '/home', label: 'Home', icon: <HomeIcon /> },
-  { to: '/custom-reports', label: 'Custom Reports', icon: <ReportIcon /> },
-  { to: '/customers', label: 'Customers', icon: <PeopleIcon /> },
-  { to: '/locations', label: 'Locations', icon: <LocationOnIcon /> },
-  { to: '/assets/history-lookup', label: 'Asset History Lookup', icon: <HistoryIcon /> },
-  { to: '/all-asset-movements', label: 'All Asset Movements', icon: <HistoryIcon /> },
-  { to: '/import', label: 'Import', icon: <ImportExportIcon /> },
-  { to: '/import-customer-info', label: 'Import Customers', icon: <ImportExportIcon /> },
-  { to: '/import-history', label: 'Import History', icon: <ImportExportIcon /> },
-  { to: '/scanned-orders', label: 'Scanned Orders', icon: <AssignmentIcon /> },
-  { to: '/orders-report', label: 'Orders Report', icon: <ReceiptIcon /> },
+  { to: '/home', label: 'Home' },
+  { to: '/customers', label: 'Customers' },
+  { to: '/locations', label: 'Locations' },
+  { to: '/assets/history-lookup', label: 'Asset History Lookup' },
+  { to: '/all-asset-movements', label: 'All Asset Movements' },
+  { to: '/import', label: 'Import' },
+  { to: '/import-customer-info', label: 'Import Customers' },
+  { to: '/import-history', label: 'Import History' },
+  { to: '/scanned-orders', label: 'Scanned Orders' },
+  { to: '/orders-report', label: 'Orders Report' },
+  { to: '/cylinders', label: 'Assets' },
 ];
 
 export default function MainLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [logo, setLogo] = useState(() => localStorage.getItem('companyLogo') || null);
+  const [logoUploadOpen, setLogoUploadOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useAuth();
@@ -53,20 +43,42 @@ export default function MainLayout() {
     setMobileOpen(!mobileOpen);
   };
 
+  const handleGlobalSearch = (e) => {
+    e.preventDefault();
+    console.log('Global search:', search);
+  };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      setLogo(evt.target.result);
+      localStorage.setItem('companyLogo', evt.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const drawer = (
-    <div>
+    <div style={{ background: '#fff', height: '100%' }}>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Gas Cylinder App
+        {logo && <img src={logo} alt="Company Logo" style={{ height: 36, marginRight: 12, borderRadius: 8 }} />}
+        <Typography variant="h5" fontWeight={900} sx={{ fontFamily: 'Inter, Montserrat, system-ui', color: '#111' }}>
+          LessAnnoyingScan
         </Typography>
+        {profile?.role === 'admin' && (
+          <label style={{ marginLeft: 8, cursor: 'pointer' }} title="Upload Logo">
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoUpload} />
+            <UploadIcon fontSize="small" style={{ verticalAlign: 'middle' }} />
+          </label>
+        )}
       </Toolbar>
       <Divider />
       <List>
-        {navItems.map(({ to, label, icon }) => (
+        {navItems.map(({ to, label }) => (
           <ListItem key={to} disablePadding>
-            <ListItemButton selected={location.pathname === to} onClick={() => navigate(to)}>
-              <ListItemIcon>{icon}</ListItemIcon>
-              <ListItemText primary={label} />
+            <ListItemButton selected={location.pathname === to} onClick={() => navigate(to)} sx={{ px: 3 }}>
+              <ListItemText primary={<Typography fontWeight={location.pathname === to ? 700 : 500} sx={{ color: '#111', fontSize: 18 }}>{label}</Typography>} />
             </ListItemButton>
           </ListItem>
         ))}
@@ -75,10 +87,10 @@ export default function MainLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f4f6fa' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#fff', fontFamily: 'Inter, Montserrat, system-ui' }}>
       <CssBaseline />
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: '#1976d2', boxShadow: 3 }}>
-        <Toolbar>
+      <AppBar position="fixed" elevation={0} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: '#fff', color: '#111', boxShadow: 'none', borderBottom: '1px solid #eee' }}>
+        <Toolbar sx={{ minHeight: 72 }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -86,18 +98,46 @@ export default function MainLayout() {
             onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
-            <MenuIcon />
+            <span style={{ fontSize: 28, fontWeight: 900 }}>≡</span>
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Gas Cylinder Dashboard
+          {logo && <img src={logo} alt="Company Logo" style={{ height: 36, marginRight: 12, borderRadius: 8 }} />}
+          <Typography variant="h5" fontWeight={900} sx={{ fontFamily: 'Inter, Montserrat, system-ui', color: '#111', mr: 4 }}>
+            LessAnnoyingScan
           </Typography>
-          <Button color="inherit" onClick={() => navigate('/home')}>Home</Button>
-          <Button color="inherit" onClick={() => navigate('/rentals')}>Rentals</Button>
-          <Button color="inherit" onClick={() => navigate('/invoices')}>Invoices</Button>
-          <Button color="inherit" onClick={() => navigate('/customers')}>Customers</Button>
-          <Button color="inherit" onClick={() => navigate('/scanned-orders')}>Scanned Orders</Button>
-          <IconButton color="inherit" onClick={() => navigate('/settings')}><SettingsIcon /></IconButton>
-          <IconButton color="inherit" onClick={() => { /* TODO: Add logout logic */ }}><LogoutIcon /></IconButton>
+          {profile?.role === 'admin' && (
+            <label style={{ marginRight: 16, cursor: 'pointer' }} title="Upload Logo">
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoUpload} />
+              <UploadIcon fontSize="small" style={{ verticalAlign: 'middle' }} />
+            </label>
+          )}
+          <Box component="form" onSubmit={handleGlobalSearch} sx={{ flexGrow: 1, maxWidth: 400, mx: 2 }}>
+            <input
+              type="text"
+              placeholder="Search customers, orders, cylinders..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 16px',
+                borderRadius: 999,
+                border: '1px solid #ddd',
+                fontSize: 16,
+                fontFamily: 'inherit',
+                outline: 'none',
+                background: '#fafbfc',
+                color: '#111',
+                boxSizing: 'border-box',
+              }}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button color="inherit" onClick={() => navigate('/home')}>Home</Button>
+            <Button color="inherit" onClick={() => navigate('/rentals')}>Rentals</Button>
+            <Button color="inherit" onClick={() => navigate('/invoices')}>Invoices</Button>
+            <Button color="inherit" onClick={() => navigate('/customers')}>Customers</Button>
+            <Button color="inherit" onClick={() => navigate('/scanned-orders')}>Scanned Orders</Button>
+            <Button variant="contained" sx={{ bgcolor: '#222', color: '#fff', borderRadius: 999, px: 4, py: 1, fontWeight: 700, fontSize: 16, textTransform: 'none', boxShadow: 'none', '&:hover': { bgcolor: '#111' } }} onClick={() => navigate('/cylinders')}>Get started</Button>
+          </Box>
         </Toolbar>
       </AppBar>
       <Box
@@ -105,7 +145,6 @@ export default function MainLayout() {
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
         aria-label="mailbox folders"
       >
-        {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -113,7 +152,7 @@ export default function MainLayout() {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: '#fff' },
           }}
         >
           {drawer}
@@ -122,7 +161,7 @@ export default function MainLayout() {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: '#fff' },
           }}
           open
         >
@@ -131,9 +170,9 @@ export default function MainLayout() {
       </Box>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` }, bgcolor: '#f4f6fa', minHeight: '100vh' }}
+        sx={{ flexGrow: 1, p: 4, width: { sm: `calc(100% - ${drawerWidth}px)` }, bgcolor: '#fff', minHeight: '100vh', fontFamily: 'Inter, Montserrat, system-ui' }}
       >
-        <Toolbar />
+        <Toolbar sx={{ minHeight: 72 }} />
         <Outlet />
       </Box>
     </Box>

@@ -242,39 +242,39 @@ function Invoices({ profile }) {
   if (error) return <Box p={4} color="error.main">Error: {error}</Box>;
 
   return (
-    <Box maxWidth="lg" mx="auto" mt={4}>
-      <Paper elevation={6} sx={{ borderRadius: 4, p: 4 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-          <Typography variant="h4" fontWeight={800} color="primary">Invoices</Typography>
-          <Button variant="outlined" color="secondary" onClick={() => navigate('/')}>Back to Dashboard</Button>
+    <Box sx={{ width: '100vw', minHeight: '100vh', bgcolor: '#fff', py: 6, px: { xs: 1, sm: 3, md: 6 } }}>
+      <Paper elevation={0} sx={{ width: '100%', maxWidth: 1300, ml: 0, borderRadius: 4, p: { xs: 2, md: 4 }, boxShadow: '0 2px 12px 0 rgba(16,24,40,0.04)', border: '1px solid #eee', bgcolor: '#fff' }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={5}>
+          <Typography variant="h3" fontWeight={900} color="primary" sx={{ letterSpacing: -1 }}>Invoices</Typography>
+          <Button variant="outlined" color="primary" onClick={() => navigate('/')} sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>Dashboard</Button>
         </Box>
         {/* Table of invoices */}
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-          <Table size="small">
+        <TableContainer sx={{ borderRadius: 3, border: '1px solid #eee', boxShadow: 'none', mt: 2, width: '100%', overflowX: 'auto' }}>
+          <Table size="small" sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Customer</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Rental Type</TableCell>
-                <TableCell>PDF</TableCell>
-                <TableCell>Email</TableCell>
+                <TableCell sx={{ px: 1, fontSize: 14 }}>ID</TableCell>
+                <TableCell sx={{ px: 1, fontSize: 14 }}>Customer</TableCell>
+                <TableCell sx={{ px: 1, fontSize: 14 }}>Date</TableCell>
+                <TableCell sx={{ px: 1, fontSize: 14 }}>Amount</TableCell>
+                <TableCell sx={{ px: 1, fontSize: 14 }}>Rental Type</TableCell>
+                <TableCell sx={{ px: 1, fontSize: 14 }}>PDF</TableCell>
+                <TableCell sx={{ px: 1, fontSize: 14 }}>Email</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {invoices.map(inv => (
                 <TableRow key={inv.id}>
-                  <TableCell>{inv.id}</TableCell>
-                  <TableCell>{inv.customer?.name}</TableCell>
-                  <TableCell>{inv.invoice_date}</TableCell>
-                  <TableCell>${inv.amount?.toFixed(2)}</TableCell>
-                  <TableCell>{inv.rental_type}</TableCell>
-                  <TableCell>
-                    {inv.file_url ? <Button size="small" href={inv.file_url} target="_blank">PDF</Button> : '—'}
+                  <TableCell sx={{ px: 1, fontSize: 14 }}>{inv.id}</TableCell>
+                  <TableCell sx={{ px: 1, fontSize: 14 }}>{inv.customer?.name}</TableCell>
+                  <TableCell sx={{ px: 1, fontSize: 14 }}>{inv.invoice_date}</TableCell>
+                  <TableCell sx={{ px: 1, fontSize: 14 }}>${inv.amount?.toFixed(2)}</TableCell>
+                  <TableCell sx={{ px: 1, fontSize: 14 }}>{inv.rental_type}</TableCell>
+                  <TableCell sx={{ px: 1, fontSize: 14 }}>
+                    {inv.file_url ? <Button size="small" href={inv.file_url} target="_blank" sx={{ borderRadius: 999, fontWeight: 700, px: 3 }}>PDF</Button> : '—'}
                   </TableCell>
-                  <TableCell>
-                    <Button size="small" variant="contained" color="primary" onClick={() => { setSelectedInvoice(inv); setShowEmailModal(true); }}>Email</Button>
+                  <TableCell sx={{ px: 1, fontSize: 14 }}>
+                    <Button size="small" variant="contained" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 3 }} onClick={() => { setSelectedInvoice(inv); setShowEmailModal(true); }}>Email</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -283,7 +283,7 @@ function Invoices({ profile }) {
         </TableContainer>
         {/* Email Modal */}
         <Dialog open={showEmailModal} onClose={() => setShowEmailModal(false)}>
-          <DialogTitle>Email Invoice</DialogTitle>
+          <DialogTitle fontWeight={900}>Email Invoice</DialogTitle>
           <DialogContent>
             <TextField
               label="Email"
@@ -296,8 +296,8 @@ function Invoices({ profile }) {
             {emailSuccess && <Alert severity="success">{emailSuccess}</Alert>}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setShowEmailModal(false)}>Cancel</Button>
-            <Button onClick={handleEmailInvoice} disabled={emailing} variant="contained" color="primary">
+            <Button onClick={() => setShowEmailModal(false)} variant="outlined" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>Cancel</Button>
+            <Button onClick={handleEmailInvoice} disabled={emailing} variant="contained" color="primary" sx={{ borderRadius: 999, fontWeight: 700, px: 4 }}>
               {emailing ? <CircularProgress size={20} /> : 'Send Email'}
             </Button>
           </DialogActions>

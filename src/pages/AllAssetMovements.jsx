@@ -123,47 +123,47 @@ export default function AllAssetMovements() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 bg-gradient-to-br from-white via-blue-50 to-blue-100 shadow-2xl rounded-2xl p-8 border border-blue-100 w-full">
-      <button onClick={() => navigate(-1)} className="mb-4 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Back</button>
-      <h2 className="text-2xl font-bold mb-4 text-blue-900">All Asset Movements</h2>
+    <div className="max-w-5xl mx-auto mt-10 bg-white shadow-lg rounded-2xl p-8 border border-gray-200 w-full">
+      <button onClick={() => navigate(-1)} className="mb-4 bg-gray-900 hover:bg-gray-700 text-white px-5 py-2 rounded-full font-semibold shadow-sm transition">Back</button>
+      <h2 className="text-2xl font-bold mb-4 text-gray-900">All Asset Movements</h2>
       <div className="mb-4 flex flex-wrap gap-2 items-end">
         <input
-          className="border p-2 rounded w-64"
+          className="border border-gray-300 p-2 rounded w-64 text-sm"
           placeholder="Search by asset, type, user, location, notes..."
           value={filter}
           onChange={e => setFilter(e.target.value)}
         />
         <div className="flex flex-col">
           <label className="text-xs text-gray-600">From</label>
-          <input type="date" className="border p-2 rounded" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+          <input type="date" className="border border-gray-300 p-2 rounded text-sm" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
         </div>
         <div className="flex flex-col">
           <label className="text-xs text-gray-600">To</label>
-          <input type="date" className="border p-2 rounded" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          <input type="date" className="border border-gray-300 p-2 rounded text-sm" value={dateTo} onChange={e => setDateTo(e.target.value)} />
         </div>
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 font-semibold transition"
+          className="bg-blue-700 text-white px-4 py-2 rounded-full shadow-sm hover:bg-blue-800 font-semibold transition text-sm"
           onClick={downloadCSV}
           disabled={!filtered.length}
         >
           Export CSV
         </button>
         <button
-          className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 font-semibold transition"
+          className="bg-green-700 text-white px-4 py-2 rounded-full shadow-sm hover:bg-green-800 font-semibold transition text-sm"
           onClick={downloadSelectedCSV}
           disabled={!selected.length}
         >
           Export Selected
         </button>
         <button
-          className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 font-semibold transition"
+          className="bg-red-700 text-white px-4 py-2 rounded-full shadow-sm hover:bg-red-800 font-semibold transition text-sm"
           onClick={deleteSelected}
           disabled={!selected.length}
         >
           Delete Selected
         </button>
         <button
-          className="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600 font-semibold transition"
+          className="bg-gray-500 text-white px-4 py-2 rounded-full shadow-sm hover:bg-gray-600 font-semibold transition text-sm"
           onClick={() => setShowColumnModal(true)}
         >
           Columns
@@ -171,8 +171,8 @@ export default function AllAssetMovements() {
       </div>
       {showColumnModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-xl w-80">
-            <div className="font-bold mb-2">Show/Hide Columns</div>
+          <div className="bg-white rounded-2xl p-6 shadow-xl w-80 border border-gray-200">
+            <div className="font-bold mb-2 text-gray-900">Show/Hide Columns</div>
             {allColumns.map(col => (
               <div key={col.key} className="flex items-center mb-1">
                 <input
@@ -181,10 +181,10 @@ export default function AllAssetMovements() {
                   onChange={() => handleColumnChange(col.key)}
                   id={`col-${col.key}`}
                 />
-                <label htmlFor={`col-${col.key}`} className="ml-2">{col.label}</label>
+                <label htmlFor={`col-${col.key}`} className="ml-2 text-gray-800 text-sm">{col.label}</label>
               </div>
             ))}
-            <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded" onClick={() => setShowColumnModal(false)}>Close</button>
+            <button className="mt-4 bg-blue-700 text-white px-4 py-2 rounded-full font-semibold shadow-sm hover:bg-blue-800 transition text-sm" onClick={() => setShowColumnModal(false)}>Close</button>
           </div>
         </div>
       )}
@@ -194,25 +194,25 @@ export default function AllAssetMovements() {
         <div className="text-red-700">Error: {error}</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border text-xs">
+          <table className="min-w-full bg-white border border-gray-200 text-xs">
             <thead>
               <tr>
-                <th className="border px-2 py-1">
+                <th className="border-b border-gray-100 px-2 py-1">
                   <input type="checkbox" checked={selected.length === filtered.length && filtered.length > 0} onChange={toggleSelectAll} />
                 </th>
                 {allColumns.filter(col => visibleColumns.includes(col.key)).map(col => (
-                  <th key={col.key} className="border px-2 py-1">{col.label}</th>
+                  <th key={col.key} className="border-b border-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 text-left whitespace-nowrap">{col.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map(r => (
                 <tr key={r.id}>
-                  <td className="border px-2 py-1">
+                  <td className="px-2 py-1">
                     <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelectRow(r.id)} />
                   </td>
                   {allColumns.filter(col => visibleColumns.includes(col.key)).map(col => (
-                    <td key={col.key} className="border px-2 py-1">{
+                    <td key={col.key} className="px-2 py-1 text-xs text-gray-900 whitespace-nowrap">{
                       col.key === 'created_at' && r[col.key] ? new Date(r[col.key]).toLocaleString() : r[col.key]
                     }</td>
                   ))}

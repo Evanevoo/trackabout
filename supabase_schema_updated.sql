@@ -350,4 +350,16 @@ INSERT INTO gas_types (name) VALUES
   ('Argon'),
   ('CO2'),
   ('Helium')
-ON CONFLICT (name) DO NOTHING; 
+ON CONFLICT (name) DO NOTHING;
+
+-- LOCATIONS
+CREATE TABLE IF NOT EXISTS locations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  address text,
+  created_at timestamp DEFAULT now()
+);
+
+-- Add location_id to cylinders and customers
+ALTER TABLE cylinders ADD COLUMN location_id uuid REFERENCES locations(id);
+ALTER TABLE customers ADD COLUMN location_id uuid REFERENCES locations(id); 

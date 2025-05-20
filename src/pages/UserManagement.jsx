@@ -36,19 +36,23 @@ export default function UserManagement() {
     setAdding(true);
     setError('');
     setSuccess('');
-    // Invite user via Supabase Auth
-    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(newEmail);
-    if (inviteError) {
-      setError(inviteError.message);
+    // Register user via Supabase Auth (public sign up)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: newEmail,
+      password: Math.random().toString(36).slice(-10) // Generate a random password, or prompt admin to set one
+    });
+    if (signUpError) {
+      setError(signUpError.message);
       setAdding(false);
       return;
     }
     // Insert or update profile with email and role
+    const userId = signUpData.user?.id || signUpData.user?.id;
     const { error: upsertError } = await supabase
       .from('profiles')
-      .upsert({ id: inviteData.user.id, email: newEmail, role: newRole }, { onConflict: ['id'] });
+      .upsert({ id: userId, email: newEmail, role: newRole }, { onConflict: ['id'] });
     if (upsertError) setError(upsertError.message);
-    else setSuccess('User invited and role set!');
+    else setSuccess('User registered and role set!');
     setAdding(false);
     setNewEmail('');
     setNewRole('user');

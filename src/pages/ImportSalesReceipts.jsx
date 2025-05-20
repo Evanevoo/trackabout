@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client';
 import * as XLSX from 'xlsx';
+import { Box, Paper, Typography, Button, TextField, Alert, Select, MenuItem, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 const REQUIRED_FIELDS = [
   { key: 'customer_id', label: 'Customer ID' },
@@ -604,28 +605,28 @@ export default function ImportSalesReceipts() {
   }, [columns]);
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 bg-gradient-to-br from-white via-blue-50 to-blue-100 shadow-2xl rounded-2xl p-8 border border-blue-100">
+    <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-extrabold text-green-900 tracking-tight">Import Sales Receipts</h2>
+        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Import Sales Receipts</h2>
         <button
           onClick={() => navigate(-1)}
-          className="bg-gradient-to-r from-gray-400 to-gray-300 text-white px-6 py-2 rounded-lg shadow-md hover:from-gray-500 hover:to-gray-400 font-semibold transition"
+          className="bg-gray-900 text-white px-5 py-2 rounded-full font-semibold shadow-sm hover:bg-gray-700 transition"
         >
           Back
         </button>
       </div>
       <form onSubmit={handleImport} className="mb-6 flex gap-2 items-end">
-        <input type="file" accept=".txt,.csv,.xlsx,.xls" onChange={handleFileChange} className="border p-2 rounded w-full" />
-        <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-green-700 font-semibold transition" disabled={!file || !preview.length || loading || !previewChecked || validationErrors.length > 0}>{loading ? 'Importing...' : 'Import'}</button>
+        <input type="file" accept=".txt,.csv,.xlsx,.xls" onChange={handleFileChange} className="border border-gray-300 p-2 rounded w-full text-sm" />
+        <button type="submit" className="bg-blue-700 text-white px-6 py-2 rounded-full font-semibold shadow-sm hover:bg-blue-800 transition text-sm" disabled={!file || !preview.length || loading || !previewChecked || validationErrors.length > 0}>{loading ? 'Importing...' : 'Import'}</button>
       </form>
       {/* Field Mapping UI */}
       {columns.length > 0 && (
-        <div className="mb-6 bg-white/80 rounded-lg p-4 border border-green-200">
-          <div className="font-semibold mb-2 flex items-center gap-4">
+        <div className="mb-6 bg-white rounded-xl p-4 border border-gray-100">
+          <div className="font-semibold mb-2 flex items-center gap-4 text-gray-800">
             Field Mapping:
             <button
               type="button"
-              className="bg-gray-200 text-gray-800 px-3 py-1 rounded shadow hover:bg-gray-300 text-xs font-semibold"
+              className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full shadow-sm hover:bg-gray-200 text-xs font-semibold"
               onClick={handleResetMapping}
             >
               Reset Mapping
@@ -634,9 +635,9 @@ export default function ImportSalesReceipts() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {ALL_FIELDS.map(field => (
               <div key={field.key} className="flex items-center gap-2">
-                <label className="w-40 font-medium text-green-900">{field.label}{REQUIRED_FIELDS.find(f => f.key === field.key) ? '' : ' (optional)'}</label>
+                <label className="w-40 font-medium text-gray-900 text-sm">{field.label}{REQUIRED_FIELDS.find(f => f.key === field.key) ? '' : ' (optional)'}</label>
                 <select
-                  className="border p-2 rounded w-full"
+                  className="border border-gray-300 p-2 rounded w-full text-sm"
                   value={mapping[field.key] || ''}
                   onChange={e => handleMappingChange(field.key, e.target.value)}
                 >
@@ -653,59 +654,46 @@ export default function ImportSalesReceipts() {
       {/* Preview Table */}
       {preview.length > 0 && (
         <div className="mb-6">
-          <div className="font-semibold mb-2">Preview ({preview.length} rows):</div>
+          <div className="font-semibold mb-2 text-gray-800">Preview ({preview.length} rows):</div>
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border">
+            <table className="min-w-full bg-white border border-gray-200 text-xs">
               <thead>
                 <tr>
-                  {ALL_FIELDS.map(field => <th key={field.key} className="border px-2 py-1 text-xs uppercase">{field.label}</th>)}
-                  <th className="border px-2 py-1 text-xs uppercase">Customer</th>
-                  <th className="border px-2 py-1 text-xs uppercase">Receipt</th>
-                  <th className="border px-2 py-1 text-xs uppercase">Line Item</th>
+                  {ALL_FIELDS.map(field => <th key={field.key} className="border-b border-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 text-left whitespace-nowrap">{field.label}</th>)}
+                  <th className="border-b border-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 text-left">Customer</th>
+                  <th className="border-b border-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 text-left">Receipt</th>
+                  <th className="border-b border-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 text-left">Line Item</th>
                 </tr>
               </thead>
               <tbody>
-                {preview
-                  .map((row, i) => ({ row, i, status: rowStatuses[i] || {} }))
-                  .filter(({ status }) =>
-                    status.lineItemStatus !== 'Skipped (Not a cylinder)' &&
-                    status.lineItemStatus !== 'Skipped (Duplicate)'
-                  )
-                  .slice(0, 20)
-                  .map(({ row, i, status }) => {
-                    const rowErrors = validationErrors.filter(e => e.row === i);
-                    return (
-                      <tr key={i} className={rowErrors.length ? 'bg-red-100' : ''}>
-                        {ALL_FIELDS.map(field => {
-                          const cellError = rowErrors.find(e => e.field === field.key);
-                          return (
-                            <td key={field.key} className={`border px-2 py-1 text-xs ${cellError ? 'bg-red-200 text-red-800 font-bold' : ''}`}>{row[field.key] || ''}</td>
-                          );
-                        })}
-                        <td className="border px-2 py-1 text-xs">{status.customerStatus || ''}</td>
-                        <td className="border px-2 py-1 text-xs">{status.receiptStatus || ''}</td>
-                        <td className="border px-2 py-1 text-xs">{status.lineItemStatus || ''}</td>
-                      </tr>
-                    );
-                  })}
+                {preview.slice(0, 5).map((row, i) => {
+                  const rowErrors = validationErrors.filter(e => e.row === i);
+                  const status = rowStatuses[i] || {};
+                  return (
+                    <tr key={i} className={rowErrors.length ? 'bg-red-50' : ''}>
+                      {ALL_FIELDS.map(field => {
+                        const cellError = rowErrors.find(e => e.field === field.key);
+                        return (
+                          <td key={field.key} className={`px-2 py-1 text-xs whitespace-nowrap ${cellError ? 'bg-red-100 text-red-700 font-bold' : 'text-gray-900'}`}>{row[field.key] || ''}</td>
+                        );
+                      })}
+                      <td className="px-2 py-1 text-xs text-gray-700 whitespace-nowrap">{status.customerStatus || ''}</td>
+                      <td className="px-2 py-1 text-xs text-gray-700 whitespace-nowrap">{status.receiptStatus || ''}</td>
+                      <td className="px-2 py-1 text-xs text-gray-700 whitespace-nowrap">{status.lineItemStatus || ''}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-            {preview
-              .map((row, i) => ({ row, i, status: rowStatuses[i] || {} }))
-              .filter(({ status }) =>
-                status.lineItemStatus !== 'Skipped (Not a cylinder)' &&
-                status.lineItemStatus !== 'Skipped (Duplicate)'
-              ).length > 20 && (
-                <div className="text-xs text-gray-500 mt-1">Showing first 20 imported rows only.</div>
-              )}
+            {preview.length > 5 && <div className="text-xs text-gray-500 mt-1">Showing first 5 rows only.</div>}
           </div>
           {validationErrors.length > 0 && (
-            <div className="text-red-700 bg-red-100 border border-red-300 rounded p-2 mt-2">
+            <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 mt-2">
               {validationErrors.length} validation error(s) found. Please fix highlighted rows before importing.
             </div>
           )}
           <button
-            className="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 font-semibold transition mt-4"
+            className="bg-blue-700 text-white px-4 py-2 rounded-full font-semibold shadow-sm hover:bg-blue-800 transition mt-4 text-sm"
             onClick={checkPreviewStatuses}
             disabled={loading || validationErrors.length > 0}
           >
@@ -715,7 +703,7 @@ export default function ImportSalesReceipts() {
       )}
       {/* Preview Summary */}
       {previewChecked && previewSummary && (
-        <div className="bg-green-50 text-green-900 p-4 rounded mb-4 border border-green-200">
+        <div className="bg-gray-50 text-gray-900 p-4 rounded mb-4 border border-gray-100">
           <div className="font-semibold mb-1">Import Summary:</div>
           <div>Customers to create: {previewSummary.customersCreated}, already exist: {previewSummary.customersExisting}</div>
           <div>Receipts to create: {previewSummary.receiptsCreated}, already exist: {previewSummary.receiptsExisting}</div>
@@ -723,131 +711,56 @@ export default function ImportSalesReceipts() {
         </div>
       )}
       {result && (
-        <div className="bg-green-100 text-green-800 p-4 rounded space-y-1">
+        <div className="bg-green-50 text-green-900 p-4 rounded space-y-1 border border-green-100">
           <div>Import finished!</div>
           <div>Customers created: {result.customersCreated}, already existed: {result.customersExisting}</div>
           <div>Receipts created: {result.receiptsCreated}, already existed: {result.receiptsExisting}</div>
           <div>Line items imported: {result.lineItemsCreated}, skipped: {result.lineItemsSkipped}</div>
           <div>Total imported: {result.imported}, Errors: {result.errors}</div>
           {result.skippedRows && result.skippedRows.length > 0 && (
-            <button
-              className="bg-yellow-500 text-white px-4 py-2 rounded shadow hover:bg-yellow-600 font-semibold transition mt-2"
-              onClick={() => downloadCSV(result.skippedRows)}
-            >
-              Download Skipped/Errored Rows
-            </button>
+            <div className="mb-2">
+              <button
+                className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full shadow-sm hover:bg-gray-200 text-xs font-semibold mb-2"
+                onClick={() => downloadCSV(result.skippedRows)}
+              >
+                Download Skipped Rows as CSV
+              </button>
+              <div className="text-xs text-red-700">
+                <b>Unmatched Descriptions (first 10):</b>
+                <ul>
+                  {result.skippedRows.slice(0, 10).map((row, i) => (
+                    <li key={i}>{row.unmatched_description}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           )}
-          {/* Rental Invoice Generation Button */}
-          {Object.keys(assetBalances).length > 0 && (
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 font-semibold transition mt-2"
-              onClick={() => setShowInvoiceModal(true)}
-              disabled={generatingInvoices}
-            >
-              Generate Rental Invoices
-            </button>
-          )}
-        </div>
-      )}
-      {/* Rental Invoice Modal */}
-      {showInvoiceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-bold mb-4">Generate Rental Invoices</h3>
-            <form
-              onSubmit={async e => {
-                e.preventDefault();
-                setGeneratingInvoices(true);
-                // For each customer+product_code with positive balance, create an invoice
-                const invoices = {};
-                for (const key in lastImportBalances.current) {
-                  const [customer_id, product_code] = key.split('|');
-                  const qty = lastImportBalances.current[key];
-                  if (qty > 0) {
-                    if (!invoices[customer_id]) invoices[customer_id] = [];
-                    invoices[customer_id].push({ product_code, qty });
-                  }
-                }
-                // Insert invoices and line items
-                for (const customer_id in invoices) {
-                  const { data: invoice, error: invoiceError } = await supabase
-                    .from('invoices')
-                    .insert({
-                      customer_id,
-                      invoice_date: new Date().toISOString().split('T')[0],
-                      details: `Rental Invoice (${rentalPeriod})`,
-                      rental_period: rentalPeriod
-                    })
-                    .select()
-                    .single();
-                  if (invoiceError) continue;
-                  const lineItems = invoices[customer_id].map(item => ({
-                    invoice_id: invoice.id,
-                    product_code: item.product_code,
-                    qty_out: item.qty,
-                    rate: rentalAmount,
-                    amount: rentalAmount * item.qty
-                  }));
-                  if (lineItems.length) {
-                    await supabase.from('invoice_line_items').insert(lineItems);
-                  }
-                }
-                setGeneratingInvoices(false);
-                setShowInvoiceModal(false);
-                alert('Rental invoices generated!');
-              }}
-            >
-              <div className="mb-4">
-                <label className="block mb-2">Rental Amount per Asset</label>
-                <input
-                  type="number"
-                  className="border p-2 rounded w-full"
-                  value={rentalAmount}
-                  onChange={e => setRentalAmount(Number(e.target.value))}
-                  min={0}
-                  step={0.01}
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">Rental Period</label>
-                <select
-                  className="border p-2 rounded w-full"
-                  value={rentalPeriod}
-                  onChange={e => setRentalPeriod(e.target.value)}
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="bg-gray-400 text-white px-4 py-2 rounded"
-                  onClick={() => setShowInvoiceModal(false)}
-                  disabled={generatingInvoices}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded"
-                  disabled={generatingInvoices}
-                >
-                  {generatingInvoices ? 'Generating...' : 'Generate'}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
       {loading && (
-        <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+        <div className="w-full bg-gray-100 rounded-full h-3 mb-4">
           <div
-            className="bg-blue-600 h-4 rounded-full transition-all"
+            className="bg-blue-700 h-3 rounded-full transition-all"
             style={{ width: `${progress}%` }}
           ></div>
         </div>
+      )}
+      {importing && (
+        <div className="fixed bottom-4 right-4 bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm">
+          Import in progress... You can navigate to another page. Import will continue in the background.<br />
+          Progress: {importProgress}%
+          {importErrors.length > 0 && <div className="text-red-200 mt-2">Errors: {importErrors.length}</div>}
+        </div>
+      )}
+      {debugMode && (
+        <div className="fixed bottom-0 right-0 bg-white border p-2 z-50 text-xs rounded shadow">
+          <div>Status: {workerStatus.status}</div>
+          <div>Progress: {workerStatus.progress}%</div>
+          {workerStatus.error && <div className="text-red-500">Error: {workerStatus.error}</div>}
+        </div>
+      )}
+      {skippedItems.length > 0 && (
+        <button onClick={downloadSkippedItems} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full shadow-sm hover:bg-gray-200 text-xs font-semibold mb-2">Download Skipped Items Debug CSV</button>
       )}
     </div>
   );
